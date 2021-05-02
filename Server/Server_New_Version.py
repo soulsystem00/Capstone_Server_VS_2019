@@ -135,64 +135,71 @@ def MakeRoom(userarry, room): # 유저 입력 받아 매칭 시켜주는 함수
 
 def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메이킹
     while(True):
-        # 대기 유저 0명 일때는 동작 수행 X
-        # 대기 유저 1명일때는 1명한테 waiting 메세지 보냄
-        # 대기 유저 2명 이상일때는 매치메이킹 시도
-        User_Num = len(userarry)
-
-        if(User_Num == 0):
-            pass
-        elif(User_Num == 1):
-            sendWaiting(userarry[0])
-        elif(User_Num > 1):
-            for i in range(User_Num):
-                Current_User:User = userarry[i]
-                # 대기시간이 맥스 대기시간 초과하면 봇 메세지 전송
-                Waiting_Time = time.time() - Current_User.User_Connection_Time
-                if(Waiting_Time > Max_Waiting_time):
-                    Current_User.User_Socket.send("bot".encode())
-                    userarry.pop(i)
-
-                else:
-                    for j in range(User_Num):
-                        if(i==j):
-                            pass
-                        else:
-                            MMR_Diff =abs(Current_User.User_MMR - userarry[j].User_MMR)
-                            MMR_MAX_DIFF = abs(Waiting_Time * 3)
-
-                            if(MMR_Diff < MMR_MAX_DIFF): # 매칭 조건 충족시 room에 넣어주고 대기열에서 빼줌
-                                tmp_list = [Current_User, userarry[j]]
-                                room.pop(0)
-                                room.append(tmp_list)
-
-                                userarry.pop(i)
-                                userarry.pop(j)
-
-
-        # 대기 유저에게 웨이팅 메세지 보내줌
-        if(User_Num >=1):
-            user:User
-            for user in userarry:
-                user.User_Socket.send("Waiting".encode())
-        else:
-            pass
-
-        # room 검사 단계
         
-        for r in room:
-            if(len(r) == 2):
-                sendStart(r[0], r[1])
-                game1 = threading.Thread(target= fight,args= (r[0], r[1], userarry, room))
-                game2 = threading.Thread(target= fight,args= (r[1], r[0], userarry, room))
-                game1.daemon = True
-                game2.daemon = True
-                game1.start()
-                game2.start()
-                # fight(room[i][0],room[i][1])
-                # fight(room[i][1],room[i][0])
-                room.pop(0)
-                room.append([])
+        try:
+            User_Num = len(userarry)
+
+            if(User_Num == 0):      # 대기 유저 0명 일때는 동작 수행 X
+                pass
+
+            elif(User_Num == 1):    # 대기 유저 1명일때는 1명한테 waiting 메세지 보냄
+                sendWaiting(userarry[0])
+
+            elif(User_Num > 1):     # 대기 유저 2명 이상일때는 매치메이킹 시도
+                for i in range(User_Num):
+                    Current_User:User = userarry[i]
+
+                    # 대기시간이 맥스 대기시간 초과하면 봇 메세지 전송
+                    Waiting_Time = time.time() - Current_User.User_Connection_Time
+                    if(Waiting_Time > Max_Waiting_time):
+                        print("send bot message")
+                        Current_User.User_Socket.send("bot".encode())
+                        userarry.pop(i)
+
+                    else:
+                        for j in range(User_Num):
+                            if(i == j):
+                                pass
+                            else:
+                                Compare_User:User = userarry[j]
+
+                                MMR_Diff = abs(Current_User.User_MMR - Compare_User.User_MMR)
+                                MMR_MAX_DIFF = abs(Waiting_Time * 3)
+
+                                if(MMR_Diff < MMR_MAX_DIFF): # 매칭 조건 충족시 room에 넣어주고 대기열에서 빼줌
+                                    print("room made")
+                                    tmp_list = [Current_User, Compare_User]
+                                    room.pop(0)
+                                    room.append(tmp_list)
+                                    userarry.pop(i)
+                                    userarry.pop(j)
+
+
+            # 대기 유저에게 웨이팅 메세지 보내줌
+            # 해당 역할을 하는 다른 쓰레드로 대체
+
+
+            # room 검사 단계
+            for r in room:
+                if(len(r) == 2):
+                    print("Game start")
+                    sendStart(r[0], r[1])
+                    game1 = threading.Thread(target= fight,args= (r[0], r[1], userarry, room))  # client 1에서 client 2로 메세지 보내는 쓰레드 실행
+                    game1.daemon = True
+                    game1.start()
+
+                    game2 = threading.Thread(target= fight,args= (r[1], r[0], userarry, room))  # client 2에서 client 1로 메세지 보내는 쓰레드 실행
+                    game2.daemon = True
+                    game2.start()
+
+                    room.pop(0)
+                    room.append([])
+
+
+        except Exception as e:
+            print(e)
+        
+        
 
 
 
@@ -209,6 +216,20 @@ def sendWaiting(room):
         time.sleep(0.1)
         print(room[i])
         print("Send Waiting")
+
+def send_Waiting_using_Userarray(userarray):
+    while(True):
+        try:
+            if(len(userarray) >=1):
+                user:User
+                for user in userarry:
+                    user.User_Socket.send("Waiting".encode())
+            else:
+                pass
+            time.sleep(0.1)
+        except Exception as e:
+            pass
+    
 
 def fight(client1, client2, userarry, room):
     while(True):
@@ -238,6 +259,7 @@ def fight(client1, client2, userarry, room):
             else:
                 client2.User_Socket.send(sentence.encode())
                 print(sentence)
+
         except Exception as e:
             print('fight error')
             print(e)
@@ -276,8 +298,12 @@ def append_Socket(connectionSocket, userarry):
 
 def print_room(room):
     while(True):
-        print(room)
-        time.sleep(5)
+        try:
+            print(room)
+            time.sleep(5)
+        except Exception as e:
+            pass
+
 
 serverPort = 1234
 serverSocket = socket(AF_INET,SOCK_STREAM)
@@ -289,7 +315,8 @@ userarry = []
 room = []
 for i in range(Max_Room):
     room.append([])
-T1 = threading.Thread(target = MakeRoom, args= (userarry, room))
+
+T1 = threading.Thread(target = MakeRoom_New_Version, args= (userarry, room))
 T1.daemon = True
 T1.start()
 
@@ -297,47 +324,19 @@ T2 = threading.Thread(target = print_room, args = (room, ))
 T2.daemon = True
 T2.start()
 
+T3 = threading.Thread(target = send_Waiting_using_Userarray, arge = (userarry, ))
+T3.daemon = True
+T3.start()
 
 while True:
     serverSocket.listen(1)
     print("server Start")
     connectionSocket, addr = serverSocket.accept()
-    print(str(addr))
-    #connectionSocket.setsockopt(IPPROTO_TCP, TCP_NODELAY, 1)
-    #connectionSocket.setblocking(False)
-    # T2 = threading.Thread(target= getClose, args= (connectionSocket, userarry, room))
-    # T2.daemon = True
-    # T2.start()
-    #getClose(connectionSocket,userarry,room)
-    
-    print("user come")
+    print("User Come" + str(addr))
+
     asdf = time.time()
     tmp = User()
     tmp.User_Socket = connectionSocket
     tmp.User_MMR = connectionSocket.recv(1024).decode()
     tmp.User_Connection_Time = time.time()
     userarry.append(tmp)
-    print(userarry[0])
-    print(len(userarry))
-    
-    #userarry.append(connectionSocket)
-
-
-    
-    # T2 = threading.Thread(target = getword, args = (connectionSocket, number))
-    # T2.daemon = True
-    # T2.start()
-
-    # while True:
-        
-    #     sentence = connectionSocket.recv(1024).decode()
-    #     print(sentence)
-    #     if sentence == 'close':
-    #         connectionSocket.close()
-    #         print('close connect')
-    #         break
-    #     else:
-    #         connectionSocket.send(sentence.encode())
-
-
-
