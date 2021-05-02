@@ -12,57 +12,6 @@ class User:
     User_MMR: int = None
     User_Connection_Time: float = None
 
-def sendword(connectionSocket, number):
-    while True:
-        try:
-
-            connectionSocket.send(str(number).encode())
-            print("send function" + str(number))
-            if(number < 2):
-                connectionSocket.send("low".encode())
-                
-                print("send low")
-            else:
-                connectionSocket.send("up".encode())
-                print("send up")
-        
-        except Exception as e:
-            
-            print('send error')
-            print(e)
-            break
-        #sentence = connectionSocket.recv(1024).decode()
-
-        # print(sentence)
-        # if sentence == 'close':
-        #     number = number - 1
-        #     connectionSocket.close()
-        #     print('close connect')
-        #     break
-        # else:
-        #     connectionSocket.send(sentence.encode()) 
-        # print('send error')
-        # print(e)
-
-def getword(connectionSocket, number):
-    while(True):
-        try:
-            print("getfunction" + str(number))
-            sentence = connectionSocket.recv(1024).decode()
-            if sentence == "close":
-                number = number - 1
-                connectionSocket.close()
-                print('close connect')
-                break
-            else:
-                connectionSocket.send(sentence.encode()) 
-                print(sentence)
-        except Exception as e:
-            number = number - 1
-            print('get error')
-            print(e)
-            break
-
 def MakeRoom(userarry, room): # 유저 입력 받아 매칭 시켜주는 함수
     while(True):
         try:
@@ -132,10 +81,8 @@ def MakeRoom(userarry, room): # 유저 입력 받아 매칭 시켜주는 함수
 
             print(e)
 
-
 def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메이킹
     while(True):
-        
         try:
             User_Num = len(userarry)
 
@@ -155,6 +102,7 @@ def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메�
                         print("send bot message")
                         Current_User.User_Socket.send("bot".encode())
                         userarry.pop(i)
+                        break
 
                     else:
                         for j in range(User_Num):
@@ -173,6 +121,7 @@ def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메�
                                     room.append(tmp_list)
                                     userarry.pop(i)
                                     userarry.pop(j)
+                                    break
 
 
             # 대기 유저에게 웨이팅 메세지 보내줌
@@ -198,13 +147,7 @@ def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메�
 
         except Exception as e:
             print(e)
-        
-        
-
-
-
-
-
+               
 def sendStart(client1, client2):
     print("send start message")
     client1.User_Socket.send("start".encode())
@@ -230,7 +173,6 @@ def send_Waiting_using_Userarray(userarray):
         except Exception as e:
             pass
     
-
 def fight(client1, client2, userarry, room):
     while(True):
         try:
@@ -265,37 +207,6 @@ def fight(client1, client2, userarry, room):
             print(e)
             break
 
-def getClose(connectionSocket, userarry, room):
-    while(True):
-        try:
-            sentence = connectionSocket.recv(1024).decode()
-            if sentence == "close":
-                print(len(userarry))
-                for i in range(len(userarry)):
-                    if(userarry[i] == connectionSocket):
-                        userarry.pop(i)
-                print(len(room))
-                for i in range(len(room)):
-                    if(len(room[i]) >= 1):
-                        if(room[i][0] == connectionSocket):
-                            room[i].pop(0)
-
-                connectionSocket.close()
-                print('close connect')
-                break
-        except Exception as e:
-            print('get Close Error')
-            print(e)
-            break
-
-def append_Socket(connectionSocket, userarry):
-    try:
-        sentence = connectionSocket.recv(1024).decode()
-        connectionSocket
-    except Exception as e:
-        print(e)
-
-
 def print_room(room):
     while(True):
         try:
@@ -303,7 +214,6 @@ def print_room(room):
             time.sleep(5)
         except Exception as e:
             pass
-
 
 serverPort = 1234
 serverSocket = socket(AF_INET,SOCK_STREAM)
