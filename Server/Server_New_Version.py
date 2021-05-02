@@ -6,6 +6,7 @@ import time
 
 Max_Waiting_time = 15
 Max_Room = 10
+
 @dataclass
 class User: 
     User_Socket: socket = None
@@ -127,23 +128,8 @@ def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메�
             # 대기 유저에게 웨이팅 메세지 보내줌
             # 해당 역할을 하는 다른 쓰레드로 대체
 
-
             # room 검사 단계
-            for r in room:
-                if(len(r) == 2):
-                    print("Game start")
-                    sendStart(r[0], r[1])
-                    game1 = threading.Thread(target= fight,args= (r[0], r[1], userarry, room))  # client 1에서 client 2로 메세지 보내는 쓰레드 실행
-                    game1.daemon = True
-                    game1.start()
-
-                    game2 = threading.Thread(target= fight,args= (r[1], r[0], userarry, room))  # client 2에서 client 1로 메세지 보내는 쓰레드 실행
-                    game2.daemon = True
-                    game2.start()
-
-                    room.pop(0)
-                    room.append([])
-
+            # 해당 코드 쓰레드로 대체
 
         except Exception as e:
             print(e)
@@ -215,6 +201,24 @@ def print_room(room):
         except Exception as e:
             pass
 
+def Room_checker(room):
+    while(True):
+        for r in room:
+            if(len(r) == 2):
+                print("Game start")
+                sendStart(r[0], r[1])
+                game1 = threading.Thread(target= fight,args= (r[0], r[1], userarry, room))  # client 1에서 client 2로 메세지 보내는 쓰레드 실행
+                game1.daemon = True
+                game1.start()
+
+                game2 = threading.Thread(target= fight,args= (r[1], r[0], userarry, room))  # client 2에서 client 1로 메세지 보내는 쓰레드 실행
+                game2.daemon = True
+                game2.start()
+
+                room.pop(0)
+                room.append([])
+
+
 serverPort = 1234
 serverSocket = socket(AF_INET,SOCK_STREAM)
 serverSocket.bind(('',serverPort))
@@ -237,6 +241,10 @@ T2.start()
 T3 = threading.Thread(target = send_Waiting_using_Userarray, arge = (userarry, ))
 T3.daemon = True
 T3.start()
+
+T4 = threading.Thread(target = Room_checker, args = (room, ))
+T4.daemon = True
+T4.start()
 
 while True:
     serverSocket.listen(1)
