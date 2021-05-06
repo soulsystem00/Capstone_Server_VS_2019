@@ -2,16 +2,59 @@ from socket import *
 import threading
 from dataclasses import dataclass
 import time
-
+import ctypes
+import multiprocessing
 
 Max_Waiting_time = 15
 Max_Room = 10
 
-@dataclass
-class User: 
-    User_Socket: socket = None
-    User_MMR: int = None
-    User_Connection_Time: float = None
+class User(threading.Thread): 
+
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        User_Socket: socket = None
+        User_MMR: int = None
+        User_Connection_Time: float = None
+        User_Thread: multiprocessing.Process = None
+
+
+def get_Close(User_Socket):
+    while(True):
+        try:
+            print("hello")
+            sentence = User_Socket.recv(1024).decode()
+            if sentence == "close":
+                print('close connect')
+                connectionSocket.close()
+                for i in range(len(userarry)):
+                    if(User_Socket == userarry[i]):
+                        userarry.pop(i)
+                break
+            else:
+                print("aasdf" + sentence)
+        except :
+            print("User function end")
+            break
+
+
+def get_Close(User_Socket):
+    while(True):
+        try:
+            sentence = User_Socket.recv(1024).decode()
+            if sentence == "close":
+                print('close connect')
+                connectionSocket.close()
+                for i in range(len(userarry)):
+                    if(User_Socket == userarry[i]):
+                        userarry.pop(i)
+                break
+            else:
+                print("aasdf" + sentence)
+        except :
+            print("User function end")
+            break
+
 
 def MakeRoom(userarry, room): # 유저 입력 받아 매칭 시켜주는 함수
     while(True):
@@ -79,7 +122,6 @@ def MakeRoom(userarry, room): # 유저 입력 받아 매칭 시켜주는 함수
                     elif(len(room[i]) == 1): # 방의 유저가 1명이면 waiting 메세지 보내줌
                         sendWaiting(room[i])
         except Exception as e:
-
             print(e)
 
 def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메이킹
@@ -131,6 +173,8 @@ def MakeRoom_New_Version(userarry, room): # 2중 for문을 이용한 매치 메�
             # room 검사 단계
             # 해당 코드 쓰레드로 대체
 
+            # 유저 접속 끊겼을 때 동작하는 코드 추가해야 됨
+
         except Exception as e:
             print(e)
                
@@ -143,15 +187,20 @@ def sendWaiting(room):
     for i in range(len(room)):
         room[i].User_Socket.send("Waiting".encode())
         time.sleep(0.1)
-        print(room[i])
+        #print(room[i])
         print("Send Waiting")
 
+def sendWaiting(user):
+    try:
+        user.User_Socket.send("Waiting".encode())
+    except :
+        pass
+    
 def send_Waiting_using_Userarray(userarray):
     while(True):
         try:
             if(len(userarray) >=1):
-                user:User
-                for user in userarry:
+                for user in userarray:
                     user.User_Socket.send("Waiting".encode())
             else:
                 pass
@@ -159,7 +208,8 @@ def send_Waiting_using_Userarray(userarray):
         except Exception as e:
             pass
     
-def fight(client1, client2, userarry, room):
+def fight(client1 : User, client2 : User, userarry, room):
+    client1.User_Thread.join()
     while(True):
         try:
             sentence = client1.User_Socket.recv(1024).decode()
@@ -234,11 +284,11 @@ T1 = threading.Thread(target = MakeRoom_New_Version, args= (userarry, room))
 T1.daemon = True
 T1.start()
 
-T2 = threading.Thread(target = print_room, args = (room, ))
-T2.daemon = True
-T2.start()
+#T2 = threading.Thread(target = print_room, args = (room, ))
+#T2.daemon = True
+#T2.start()
 
-T3 = threading.Thread(target = send_Waiting_using_Userarray, arge = (userarry, ))
+T3 = threading.Thread(target = send_Waiting_using_Userarray, args = (userarry, ))
 T3.daemon = True
 T3.start()
 
@@ -248,7 +298,7 @@ T4.start()
 
 while True:
     serverSocket.listen(1)
-    print("server Start")
+    print("NEW server Start")
     connectionSocket, addr = serverSocket.accept()
     print("User Come" + str(addr))
 
@@ -258,3 +308,21 @@ while True:
     tmp.User_MMR = connectionSocket.recv(1024).decode()
     tmp.User_Connection_Time = time.time()
     userarry.append(tmp)
+    #tmp.daemon = True
+    T5 = multiprocessing.Process(target=get_Close, args=(tmp.User_Socket, ))
+    T5.daemon = True
+    tmp.User_Thread = T5
+    tmp.User_Thread.start()
+
+
+    
+    #time.sleep(5)
+    #tmp.terminate()
+    #print("terminated")
+    #print("hello")
+    #tmp.raise_exception()
+    #tmp.join()
+    #tmp.join()
+    #T5 = threading.Thread(target = get_Clost, args=(connectionSocket, userarry))
+    #T5.deamon = True
+    #T5.start()
